@@ -1,17 +1,16 @@
 import requests
 from bs4 import BeautifulSoup
 import re
-from urllib.parse import urljoin
-
+from urllib.parse import urljoin, urlparse
 
 class WebCrawler:
     def __init__(self, url, max_depth, outside_depth=1):
         """
-        :param url: The starting URL (this also serves as the "prefix" if you want path-based restriction).
-        :param max_depth: How many levels deep to crawl for URLs that are inside the prefix.
-        :param outside_depth: How many levels deep to crawl for URLs that are outside the prefix (default=1).
+        :param url: The starting URL. We treat all URLs that share the same domain as 'inside'.
+        :param max_depth: How many levels deep to crawl for URLs in the same domain.
+        :param outside_depth: How many levels deep to crawl for URLs outside the domain (default=1).
         """
-        # Remove trailing slash for uniform "startswith" comparisons later
+        # Remove trailing slash for uniform "startswith" comparisons later (if needed)
         self.url = url.rstrip('/')
         self.max_depth = max_depth
         self.outside_depth = outside_depth
@@ -20,36 +19,32 @@ class WebCrawler:
         self.links = set()
         self.jsfiles = set()
 
+        # Parse domain of the starting URL
+        self.parsed_self = urlparse(self.url)
+
     def start_crawling(self):
-        """Begin the recursive crawling from self.url at depth = 1."""
+        """Begin crawling from self.url at depth=1."""
         self.crawl(self.url, depth=1)
 
-    def is_within_prefix(self, link):
+    def is_within_domain(self, link):
         """
-        Check if the discovered 'link' starts with the original self.url prefix.
-
-        Example:
-          If self.url = 'https://community.bistudio.com/wiki/Category:Arma_Reforger/Modding'
-          and the link is 'https://community.bistudio.com/wiki/Category:Arma_Reforger/Modding/Assets'
-          => returns True
-
-          If link = 'https://www.mediawiki.org/wiki/date_picker'
-          => returns False
+        Check if the discovered 'link' belongs to the same domain as self.url.
+        Using only the netloc for domain comparison (e.g., "community.bistudio.com").
         """
-        return link.startswith(self.url)
+        parsed_link = urlparse(link)
+        return (parsed_link.netloc == self.parsed_self.netloc)
 
     def crawl(self, current_url, depth):
         """
-        Recursively crawl 'current_url' up to the appropriate max depth.
-        - If it's within the prefix, we allow up to self.max_depth.
-        - If it's outside the prefix, we allow up to self.outside_depth.
+        Recursively crawl 'current_url' up to the appropriate depth:
+          - If it's within the same domain, we allow up to self.max_depth.
+          - Otherwise, we allow up to self.outside_depth.
         """
         # Decide which depth limit to apply
-        if self.is_within_prefix(current_url):
+        if self.is_within_domain(current_url):
             if depth > self.max_depth:
                 return
         else:
-            # It's outside our prefix
             if depth > self.outside_depth:
                 return
 
@@ -61,7 +56,7 @@ class WebCrawler:
             print(f"[-] An error occurred fetching {current_url}: {err}")
             return
 
-        # Regex for capturing subdomains (optional example usage)
+        # Regex for capturing subdomains (optional usage)
         subdomain_query = r"https?://([a-zA-Z0-9.-]+)"
 
         for link_tag in soup.find_all('a'):
@@ -70,14 +65,13 @@ class WebCrawler:
                 # Convert relative href to a full absolute URL
                 full_link = urljoin(current_url, href)
 
-                # Optionally track subdomains encountered
+                # Optionally track subdomains
                 if re.match(subdomain_query, href) and href not in self.subdomains:
                     self.subdomains.add(href)
 
                 # Avoid re-crawling the same link
                 if full_link not in self.links:
                     self.links.add(full_link)
-                    # Recurse one level deeper
                     self.crawl(full_link, depth + 1)
 
         # Optionally gather JS files
@@ -89,7 +83,7 @@ class WebCrawler:
     def print_results(self):
         """
         Print discovered links, subdomains, and JS files.
-        Feel free to customize or remove if not needed.
+        You can remove or modify as desired.
         """
         print("Discovered Links:")
         for link in sorted(self.links):

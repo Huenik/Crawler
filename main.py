@@ -7,7 +7,7 @@ from Downloader import download_html
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Crawl a website, with a different outside-domain depth limit, and download discovered pages."
+        description="Crawl a website with domain-based depth restrictions and download discovered pages."
     )
     parser.add_argument(
         '-u', '--url',
@@ -18,13 +18,13 @@ def main():
         '-d', '--depth',
         type=int,
         default=2,
-        help="Max recursion depth for links that are inside the prefix."
+        help="Max recursion depth for links in the same domain."
     )
     parser.add_argument(
         '--outside-depth',
         type=int,
         default=1,
-        help="Max recursion depth for links that are outside the prefix (default=1)."
+        help="Max recursion depth for links outside the domain (default=1)."
     )
     parser.add_argument(
         '-o', '--output',
@@ -33,7 +33,7 @@ def main():
     )
     args = parser.parse_args()
 
-    # 1) Create the crawler with inside/outside depth settings
+    # 1) Create the crawler with domain-based depth settings
     crawler = WebCrawler(
         url=args.url,
         max_depth=args.depth,
