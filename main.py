@@ -5,9 +5,9 @@ import sys
 import time
 import threading
 import requests
+from urllib.parse import urlparse
 from Crawler import WebCrawler
 from Downloader import sanitize_filename  # to build filenames
-
 
 # --- Spinner for crawling phase ---
 def spinner_and_progress(crawler):
@@ -27,7 +27,6 @@ def spinner_and_progress(crawler):
     sys.stdout.write("\rCrawling complete!                    \n")
     sys.stdout.flush()
 
-
 # --- Spinner for download phase ---
 def spinner_download(total, counter, finished_flag):
     spinner_chars = ["|", "\\", "-", "/"]
@@ -44,7 +43,6 @@ def spinner_download(total, counter, finished_flag):
         time.sleep(0.2)
     sys.stdout.write("\rDownloading complete!                      \n")
     sys.stdout.flush()
-
 
 # --- Download all function with duplicate protection and image skipping ---
 def download_all(links, output_dir, verbose):
@@ -103,10 +101,9 @@ def download_all(links, output_dir, verbose):
     if spinner_thread:
         spinner_thread.join()
 
-
 def main():
     parser = argparse.ArgumentParser(
-        description="Crawl a site, download pages (with anti duplicate and anti image), and optionally combine them."
+        description="Crawl a site, download pages (with anti-duplicate and anti-image measures), optionally restrict downloads to the target domain, and optionally combine them."
     )
     parser.add_argument('-u', '--url', required=True, help="Starting URL to crawl.")
     parser.add_argument('-d', '--depth', type=int, default=2, help="Max recursion depth for same-domain links.")
@@ -118,6 +115,9 @@ def main():
     parser.add_argument('--combine', action='store_true', help="Run the combiner after downloads complete.")
     parser.add_argument('--parents', type=int, default=1,
                         help="Number of parent path segments to use for combining (default=1).")
+    # New optional argument to restrict downloads to only pages on the target domain.
+    parser.add_argument('-r', '--restrict', action='store_true',
+                        help="Restrict downloads to only pages on the target domain.")
     args = parser.parse_args()
 
     # 1) Create and start the crawler.
@@ -135,21 +135,26 @@ def main():
     if crawl_spinner:
         crawl_spinner.join()
 
-    # 2) Create output directory if it doesn't exist.
+    # 2) If restrict flag is set, filter the links to only those on the target domain.
+    if args.restrict:
+        target_netloc = crawler.parsed_self.netloc
+        original_count = len(crawler.links)
+        crawler.links = {link for link in crawler.links if urlparse(link).netloc == target_netloc}
+        print(f"\nRestricted links from {original_count} to {len(crawler.links)} on the target domain.")
+
+    # 3) Create output directory if it doesn't exist.
     if not os.path.exists(args.output):
         os.makedirs(args.output)
 
-    # 3) Download each discovered link with duplicate protection and image skipping.
+    # 4) Download each discovered link with duplicate protection and image skipping.
     download_all(crawler.links, args.output, args.verbose)
     print(f"\nDone! Downloaded {len(crawler.links)} pages to '{args.output}'.")
 
-    # 4) If the --combine flag is set, run the combiner.
+    # 5) If the --combine flag is set, run the combiner.
     if args.combine:
         print("\nCombining downloaded files...")
-        # Assume combiner.py has a function named combine_all.
         try:
             from Combiner import combine_all
-            # The combiner is expected to read a map file, so we assume Downloader.py appended to "download_map.txt"
             map_file = os.path.join(args.output, "download_map.txt")
             output_combined = os.path.join(args.output, "combined_html")
             if not os.path.exists(output_combined):
@@ -158,7 +163,6 @@ def main():
             print(f"Combined files saved in '{output_combined}'.")
         except ImportError:
             print("Combiner module not found. Skipping combination step.")
-
 
 if __name__ == "__main__":
     main()
