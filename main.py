@@ -10,6 +10,8 @@ from Crawler import WebCrawler
 from Downloader import sanitize_filename  # to build filenames
 
 # --- Spinner for crawling phase ---
+
+
 def spinner_and_progress(crawler):
     spinner_chars = ["|", "\\", "-", "/"]
     idx = 0
@@ -28,6 +30,8 @@ def spinner_and_progress(crawler):
     sys.stdout.flush()
 
 # --- Spinner for download phase ---
+
+
 def spinner_download(total, counter, finished_flag):
     spinner_chars = ["|", "\\", "-", "/"]
     idx = 0
@@ -45,6 +49,8 @@ def spinner_download(total, counter, finished_flag):
     sys.stdout.flush()
 
 # --- Download all function with duplicate protection and image skipping ---
+
+
 def download_all(links, output_dir, verbose):
     """
     Download each URL from 'links' into output_dir.
@@ -101,9 +107,11 @@ def download_all(links, output_dir, verbose):
     if spinner_thread:
         spinner_thread.join()
 
+
 def main():
     parser = argparse.ArgumentParser(
-        description="Crawl a site, download pages (with anti-duplicate and anti-image measures), optionally restrict downloads to the target domain, and optionally combine them."
+        description=
+        "Crawl a site, download with anti dupe and anti image, options: restrict downloads to target domain, and combine output"
     )
     parser.add_argument('-u', '--url', required=True, help="Starting URL to crawl.")
     parser.add_argument('-d', '--depth', type=int, default=2, help="Max recursion depth for same-domain links.")
@@ -163,6 +171,7 @@ def main():
             print(f"Combined files saved in '{output_combined}'.")
         except ImportError:
             print("Combiner module not found. Skipping combination step.")
+
 
 if __name__ == "__main__":
     main()
