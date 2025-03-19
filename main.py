@@ -10,8 +10,6 @@ from Crawler import WebCrawler
 from Downloader import sanitize_filename  # to build filenames
 
 # --- Spinner for crawling phase ---
-
-
 def spinner_and_progress(crawler):
     spinner_chars = ["|", "\\", "-", "/"]
     idx = 0
@@ -30,8 +28,6 @@ def spinner_and_progress(crawler):
     sys.stdout.flush()
 
 # --- Spinner for download phase ---
-
-
 def spinner_download(total, counter, finished_flag):
     spinner_chars = ["|", "\\", "-", "/"]
     idx = 0
@@ -48,14 +44,13 @@ def spinner_download(total, counter, finished_flag):
     sys.stdout.write("\rDownloading complete!                      \n")
     sys.stdout.flush()
 
-# --- Download all function with duplicate protection and image skipping ---
-
-
+# --- Download all function with duplicate protection, image skipping, and map logging ---
 def download_all(links, output_dir, verbose):
     """
     Download each URL from 'links' into output_dir.
     Skips non-http links, image URLs, and duplicates (if the file already exists).
     In non-verbose mode, a spinner shows progress.
+    Logs each successful download to "download_map.txt".
     """
     total = len(links)
     if total == 0:
@@ -70,6 +65,11 @@ def download_all(links, output_dir, verbose):
 
     # Common image extensions to skip
     image_extensions = ('.jpg', '.jpeg', '.png', '.gif', '.bmp', '.svg', '.ico')
+
+    # Define the map file path and clear its contents
+    map_file_path = os.path.join(output_dir, "download_map.txt")
+    with open(map_file_path, "w", encoding="utf-8") as mf:
+        mf.write("")
 
     for link in links:
         if not link.startswith("http"):
@@ -96,6 +96,9 @@ def download_all(links, output_dir, verbose):
             response.raise_for_status()
             with open(filepath, "w", encoding="utf-8") as f:
                 f.write(response.text)
+            # Log the mapping for later combining
+            with open(map_file_path, "a", encoding="utf-8") as mf:
+                mf.write(f"{link}\t{filename}\n")
             if verbose:
                 print(f"[+] Saved {link} => {filepath}")
         except requests.exceptions.RequestException as err:
@@ -107,11 +110,9 @@ def download_all(links, output_dir, verbose):
     if spinner_thread:
         spinner_thread.join()
 
-
 def main():
     parser = argparse.ArgumentParser(
-        description=
-        "Crawl a site, download with anti dupe and anti image, options: restrict downloads to target domain, and combine output"
+        description="Crawl a site, download with anti-duplicate and anti-image measures, restrict downloads to the target domain, and optionally combine output."
     )
     parser.add_argument('-u', '--url', required=True, help="Starting URL to crawl.")
     parser.add_argument('-d', '--depth', type=int, default=2, help="Max recursion depth for same-domain links.")
@@ -119,11 +120,9 @@ def main():
                         help="Max recursion depth for outside-domain links (default=1).")
     parser.add_argument('-o', '--output', default='downloaded_html', help="Directory to store downloaded HTML files.")
     parser.add_argument('-v', '--verbose', action='store_true', help="Enable verbose output (no spinner).")
-    # New optional argument to run the combiner after downloads are finished.
     parser.add_argument('--combine', action='store_true', help="Run the combiner after downloads complete.")
     parser.add_argument('--parents', type=int, default=1,
                         help="Number of parent path segments to use for combining (default=1).")
-    # New optional argument to restrict downloads to only pages on the target domain.
     parser.add_argument('-r', '--restrict', action='store_true',
                         help="Restrict downloads to only pages on the target domain.")
     args = parser.parse_args()
@@ -154,7 +153,7 @@ def main():
     if not os.path.exists(args.output):
         os.makedirs(args.output)
 
-    # 4) Download each discovered link with duplicate protection and image skipping.
+    # 4) Download each discovered link with duplicate protection, image skipping, and log mapping.
     download_all(crawler.links, args.output, args.verbose)
     print(f"\nDone! Downloaded {len(crawler.links)} pages to '{args.output}'.")
 
@@ -171,7 +170,6 @@ def main():
             print(f"Combined files saved in '{output_combined}'.")
         except ImportError:
             print("Combiner module not found. Skipping combination step.")
-
 
 if __name__ == "__main__":
     main()
