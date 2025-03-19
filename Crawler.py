@@ -1,4 +1,4 @@
-# original code written by calc1f4r @ https://github.com/calc1f4r/Recusive-web-crawler/
+# original code that this is based on was written by calc1f4r @ https://github.com/calc1f4r/Recusive-web-crawler/
 import requests
 from bs4 import BeautifulSoup
 import re
