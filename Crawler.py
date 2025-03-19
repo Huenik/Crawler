@@ -67,11 +67,11 @@ class WebCrawler:
                 print(f"[+] Links : {link}")
 
         print()
-
+"""
         if self.jsfiles:
             for file in self.jsfiles:
                 print(f"[+] JS Files : {file}")
-
+"""
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-u', '--url', dest='url', help="Specify the URL, provide it along http/https", required=True)
