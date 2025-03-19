@@ -1,4 +1,4 @@
-# written by https://github.com/calc1f4r/Recusive-web-crawler/
+# original code written by calc1f4r @ https://github.com/calc1f4r/Recusive-web-crawler/
 import requests
 import argparse
 from termcolor import colored
@@ -48,12 +48,12 @@ class WebCrawler:
                 self.jsfiles.add(script_src)
 
     def print_banner(self):
-        print("-" * 80)
+        """print("-" * 80)
         print(colored(f"Recursive Web Crawler starting at {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}", 'cyan', attrs=['bold']))
         print("-" * 80)
         print(f"[*] URL".ljust(20, " "), ":", self.url)
         print(f"[*] Max Depth".ljust(20, " "), ":", self.max_depth)
-        print("-" * 80)
+        print("-" * 80)"""
 
     def print_results(self):
         """if self.subdomains:
