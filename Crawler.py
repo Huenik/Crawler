@@ -1,3 +1,4 @@
+# written by https://github.com/calc1f4r/Recusive-web-crawler/
 import requests
 import argparse
 from termcolor import colored
@@ -54,12 +55,13 @@ class WebCrawler:
         print(f"[*] Max Depth".ljust(20, " "), ":", self.max_depth)
         print("-" * 80)
 
+"""
     def print_results(self):
         if self.subdomains:
             for subdomain in self.subdomains:
                 print(f"[+] Subdomains : {subdomain}")
         print()
-
+"""
         if self.links:
             for link in self.links:
                 print(f"[+] Links : {link}")
