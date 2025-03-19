@@ -1,10 +1,7 @@
 # original code written by calc1f4r @ https://github.com/calc1f4r/Recusive-web-crawler/
 import requests
-import argparse
-from termcolor import colored
 from bs4 import BeautifulSoup
 import re
-from datetime import datetime
 from urllib.parse import urljoin
 
 class WebCrawler:
@@ -29,11 +26,12 @@ class WebCrawler:
             print(f"[-] An error occurred: {err}")
             return
 
-        subdomain_query = fr"https?://([a-zA-Z0-9.-]+)"
+        subdomain_query = r"https?://([a-zA-Z0-9.-]+)"
 
         for link in soup.find_all('a'):
             link_text = link.get('href')
             if link_text:
+                # Collect subdomains or direct links
                 if re.match(subdomain_query, link_text) and link_text not in self.subdomains:
                     self.subdomains.add(link_text)
                 else:
@@ -47,40 +45,9 @@ class WebCrawler:
             if script_src:
                 self.jsfiles.add(script_src)
 
-    def print_banner(self):
-        """print("-" * 80)
-        print(colored(f"Recursive Web Crawler starting at {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}", 'cyan', attrs=['bold']))
-        print("-" * 80)
-        print(f"[*] URL".ljust(20, " "), ":", self.url)
-        print(f"[*] Max Depth".ljust(20, " "), ":", self.max_depth)
-        print("-" * 80)"""
-
     def print_results(self):
-        """if self.subdomains:
-            for subdomain in self.subdomains:
-                print(f"[+] Subdomains : {subdomain}")
-        print()"""
-
+        # Example: Print collected links
         if self.links:
             for link in self.links:
                 if link.startswith("http"):
-                    print(f"{link}")
-
-        print()
-
-        """if self.jsfiles:
-            for file in self.jsfiles:
-                print(f"[+] JS Files : {file}")"""
-
-def get_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-u', '--url', dest='url', help="Specify the URL, provide it along http/https", required=True)
-    parser.add_argument('-d', '--depth', dest='depth', type=int, default=1, help="Specify the recursion depth limit")
-    return parser.parse_args()
-
-if __name__ == "__main__":
-    args = get_args()
-    web_crawler = WebCrawler(args.url, args.depth)
-    web_crawler.print_banner()
-    web_crawler.start_crawling()
-    web_crawler.print_results()
+                    print(link)
