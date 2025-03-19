@@ -148,7 +148,7 @@ def main():
         print("\nCombining downloaded files...")
         # Assume combiner.py has a function named combine_all.
         try:
-            from combiner import combine_all
+            from Combiner import combine_all
             # The combiner is expected to read a map file, so we assume Downloader.py appended to "download_map.txt"
             map_file = os.path.join(args.output, "download_map.txt")
             output_combined = os.path.join(args.output, "combined_html")
