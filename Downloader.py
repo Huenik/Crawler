@@ -14,7 +14,7 @@ def sanitize_filename(url):
         safe_path = "index"
 
     # Example: "index__community.bistudio.com"
-    filename = f"{safe_path}__{parsed.netloc}"
+    filename = f"{parsed.netloc}__{safe_path}"
 
     if parsed.query:
         query = re.sub(r'[^a-zA-Z0-9_\-\.]', '_', parsed.query)
