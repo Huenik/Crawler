@@ -5,6 +5,7 @@ import os
 from Crawler import WebCrawler
 from Downloader import download_html
 
+
 def main():
     parser = argparse.ArgumentParser(
         description="Crawl a website with domain-based depth restrictions and download discovered pages."
@@ -54,6 +55,7 @@ def main():
             download_html(link, args.output)
 
     print("\nDone! Downloaded {} pages to '{}'.".format(len(crawler.links), args.output))
+
 
 if __name__ == "__main__":
     main()
