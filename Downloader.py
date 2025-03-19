@@ -13,7 +13,7 @@ def sanitize_filename(url):
     if not safe_path or safe_path == "_":
         safe_path = "index"
 
-    filename = f"{parsed.netloc}{safe_path}"
+    filename = f"{safe_path}__{parsed.netloc}"
 
     if parsed.query:
         query = re.sub(r'[^a-zA-Z0-9_\-\.]', '_', parsed.query)
