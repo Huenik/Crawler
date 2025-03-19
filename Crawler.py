@@ -63,7 +63,8 @@ class WebCrawler:
 
         if self.links:
             for link in self.links:
-                print(f"[+] Links : {link}")
+                if link.startswith("http"):
+                    print(f"{link}")
 
         print()
 
