@@ -6,10 +6,11 @@ import time
 import threading
 import requests
 from Crawler import WebCrawler
-from Downloader import sanitize_filename  # Use sanitize_filename to build filenames
+from Downloader import sanitize_filename  # Use to build filenames
 
+
+# --- Spinner for crawling phase (unchanged) ---
 def spinner_and_progress(crawler):
-    """Spinner for crawling phase (already described)."""
     spinner_chars = ["|", "\\", "-", "/"]
     idx = 0
     while not crawler.finished:
@@ -26,8 +27,9 @@ def spinner_and_progress(crawler):
     sys.stdout.write("\rCrawling complete!                    \n")
     sys.stdout.flush()
 
+
+# --- Spinner for download phase ---
 def spinner_download(total, counter, finished_flag):
-    """Spinner for download phase: shows progress as files are downloaded."""
     spinner_chars = ["|", "\\", "-", "/"]
     idx = 0
     while not finished_flag["finished"]:
@@ -43,17 +45,18 @@ def spinner_download(total, counter, finished_flag):
     sys.stdout.write("\rDownloading complete!                      \n")
     sys.stdout.flush()
 
+
+# --- Download all function with duplicate protection and image skipping ---
 def download_all(links, output_dir, verbose):
     """
     Download each URL from 'links' into output_dir.
-    In non-verbose mode, update a shared counter so a spinner thread can display progress.
-    In verbose mode, simply call the download function (which prints its own messages).
+    In non-verbose mode, a spinner thread shows progress.
+    Duplicate URLs (based on file existence) and image URLs are skipped.
     """
     total = len(links)
     if total == 0:
         return
 
-    # In non-verbose mode, use a counter dict and finished flag for the spinner thread.
     counter = {"count": 0}
     finished_flag = {"finished": False}
     spinner_thread = None
@@ -61,17 +64,35 @@ def download_all(links, output_dir, verbose):
         spinner_thread = threading.Thread(target=spinner_download, args=(total, counter, finished_flag))
         spinner_thread.start()
 
-    # Download each link sequentially
+    # Define image extensions to skip
+    image_extensions = ('.jpg', '.jpeg', '.png', '.gif', '.bmp', '.svg', '.ico')
+
     for link in links:
+        # Skip non-http links
         if not link.startswith("http"):
-            # Skip non-http links
             counter["count"] += 1
             continue
+
+        # Skip URLs that appear to point to an image
+        if link.lower().endswith(image_extensions):
+            if verbose:
+                print(f"[!] Skipping image URL: {link}")
+            counter["count"] += 1
+            continue
+
+        filename = sanitize_filename(link)
+        filepath = os.path.join(output_dir, filename)
+
+        # Duplicate protection: if file exists, skip download.
+        if os.path.exists(filepath):
+            if verbose:
+                print(f"[!] Duplicate found, skipping {link}")
+            counter["count"] += 1
+            continue
+
         try:
             response = requests.get(link, timeout=10, allow_redirects=True)
             response.raise_for_status()
-            filename = sanitize_filename(link)
-            filepath = os.path.join(output_dir, filename)
             with open(filepath, "w", encoding="utf-8") as f:
                 f.write(response.text)
             if verbose:
@@ -81,18 +102,19 @@ def download_all(links, output_dir, verbose):
                 print(f"[-] Failed to download {link}: {err}")
         counter["count"] += 1
 
-    # Signal spinner thread that downloads are complete
     finished_flag["finished"] = True
     if spinner_thread:
         spinner_thread.join()
 
+
 def main():
     parser = argparse.ArgumentParser(
-        description="Crawl a website with domain-based restrictions and download pages with a progress spinner."
+        description="Crawl a website with domain restrictions, then download pages with duplicate protection and image skipping."
     )
     parser.add_argument('-u', '--url', required=True, help="Starting URL to crawl.")
     parser.add_argument('-d', '--depth', type=int, default=2, help="Max recursion depth for same-domain links.")
-    parser.add_argument('--outside-depth', type=int, default=1, help="Max recursion depth for outside-domain links (default=1).")
+    parser.add_argument('--outside-depth', type=int, default=1,
+                        help="Max recursion depth for outside-domain links (default=1).")
     parser.add_argument('-o', '--output', default='downloaded_html', help="Directory to store downloaded HTML files.")
     parser.add_argument('-v', '--verbose', action='store_true', help="Enable verbose output (no spinner).")
     args = parser.parse_args()
@@ -108,7 +130,6 @@ def main():
     if not args.verbose:
         spinner_thread = threading.Thread(target=spinner_and_progress, args=(crawler,))
         spinner_thread.start()
-
     crawler.start_crawling()
     if spinner_thread:
         spinner_thread.join()
@@ -117,10 +138,11 @@ def main():
     if not os.path.exists(args.output):
         os.makedirs(args.output)
 
-    # 3) Download all discovered links with a download progress spinner.
+    # 3) Download discovered links with progress spinner, duplicate protection, and image skipping.
     download_all(crawler.links, args.output, args.verbose)
 
     print(f"\nDone! Downloaded {len(crawler.links)} pages to '{args.output}'.")
+
 
 if __name__ == "__main__":
     main()
