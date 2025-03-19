@@ -13,7 +13,7 @@ def sanitize_filename(url):
     if not safe_path or safe_path == "_":
         safe_path = "index"
 
-    # Example format: "index__community.bistudio.com.html"
+    # Example: "index__community.bistudio.com"
     filename = f"{safe_path}__{parsed.netloc}"
 
     if parsed.query:
@@ -28,7 +28,7 @@ def sanitize_filename(url):
 def download_html(url, output_dir):
     """
     Download and save the HTML for a single URL into output_dir.
-    Also logs the URL->filename mapping to download_map.txt if successful.
+    Append the URL->filename mapping to download_map.txt if successful.
     """
     filename = sanitize_filename(url)
     filepath = os.path.join(output_dir, filename)
